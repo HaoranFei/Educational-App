@@ -39,6 +39,7 @@ from google.cloud.speech import types
 
 
 import pyaudio
+import webbrowser
 from six.moves import queue
 import os
 # [END import_libraries]
@@ -119,6 +120,7 @@ class MicrophoneStream(object):
             yield b''.join(data)
 # [END audio_stream]
 
+
 def listen_print_loop(responses):
     """Iterates through server responses and prints them.
 
@@ -174,6 +176,7 @@ def listen_print_loop(responses):
 
             num_chars_printed = 0
 
+
 def entities_text(text):
     """Detects entities in the text."""
     client = language.LanguageServiceClient()
@@ -194,13 +197,15 @@ def entities_text(text):
                    'EVENT', 'WORK_OF_ART', 'CONSUMER_GOOD', 'OTHER')
 
     for entity in entities:
+        url = entity.metadata.get('wikipedia_url', '-')
         print('=' * 20)
         print(u'{:<16}: {}'.format('name', entity.name))
         print(u'{:<16}: {}'.format('type', entity_type[entity.type]))
         print(u'{:<16}: {}'.format('metadata', entity.metadata))
         print(u'{:<16}: {}'.format('salience', entity.salience))
-        print(u'{:<16}: {}'.format('wikipedia_url',
-              entity.metadata.get('wikipedia_url', '-')))
+        print(u'{:<16}: {}'.format('wikipedia_url', url))
+        webbrowser.open(url)
+
 
 
 def main():
@@ -227,6 +232,6 @@ def main():
         # Now, put the transcription responses to use.
         listen_print_loop(responses)
 
+
 if __name__ == '__main__':
     main()
-    
