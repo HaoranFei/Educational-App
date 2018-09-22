@@ -33,13 +33,24 @@ import re
 import sys
 
 from google.cloud import speech
+from google.cloud import language
 from google.cloud.speech import enums
 from google.cloud.speech import types
+
+
 import pyaudio
 from six.moves import queue
+import os
 # [END import_libraries]
 
 # Audio recording parameters
+
+
+
+
+
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="/Users/feihaoran/Desktop/key.json"
+
 RATE = 16000
 CHUNK = int(RATE / 10)  # 100ms
 
@@ -148,11 +159,12 @@ def listen_print_loop(responses):
         if not result.is_final:
             sys.stdout.write(transcript + overwrite_chars + '\r')
             sys.stdout.flush()
-
             num_chars_printed = len(transcript)
 
         else:
             print(transcript + overwrite_chars)
+            entities_text(transcript)
+
 
             # Exit recognition if any of the transcribed phrases could be
             # one of our keywords.
@@ -161,6 +173,35 @@ def listen_print_loop(responses):
                 break
 
             num_chars_printed = 0
+
+def entities_text(text):
+    """Detects entities in the text."""
+    client = language.LanguageServiceClient()
+
+    text = text.decode('utf-8')
+
+    # Instantiates a plain text document.
+    document = language.types.Document(
+        content=text,
+        type=language.enums.Document.Type.PLAIN_TEXT)
+
+    # Detects entities in the document. You can also analyze HTML with:
+    #   document.type == enums.Document.Type.HTML
+    entities = client.analyze_entities(document).entities
+
+    # entity types from enums.Entity.Type
+    entity_type = ('UNKNOWN', 'PERSON', 'LOCATION', 'ORGANIZATION',
+                   'EVENT', 'WORK_OF_ART', 'CONSUMER_GOOD', 'OTHER')
+
+    for entity in entities:
+        print('=' * 20)
+        print(u'{:<16}: {}'.format('name', entity.name))
+        print(u'{:<16}: {}'.format('type', entity_type[entity.type]))
+        print(u'{:<16}: {}'.format('metadata', entity.metadata))
+        print(u'{:<16}: {}'.format('salience', entity.salience))
+        print(u'{:<16}: {}'.format('wikipedia_url',
+              entity.metadata.get('wikipedia_url', '-')))
+
 
 def main():
     # See http://g.co/cloud/speech/docs/languages
@@ -189,39 +230,3 @@ def main():
 if __name__ == '__main__':
     main()
     
-    
-'''import io
-import os
-
-# Imports the Google Cloud client library
-from google.cloud import speech
-from google.cloud.speech import enums
-from google.cloud.speech import types
-import os
-
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"]="/Users/gaojun/Desktop/privateKey.json"
-
-# Instantiates a client
-client = speech.SpeechClient()
-
-# The name of the audio file to transcribe
-file_name = os.path.join(
-    os.path.dirname(__file__),
-    'resources',
-    'audio.raw')
-
-# Loads the audio into memory
-with io.open(file_name, 'rb') as audio_file:
-    content = audio_file.read()
-    audio = types.RecognitionAudio(content=content)
-
-config = types.RecognitionConfig(
-    encoding=enums.RecognitionConfig.AudioEncoding.LINEAR16,
-    sample_rate_hertz=16000,
-    language_code='en-US')
-
-# Detects speech in the audio file
-response = client.recognize(config, audio)
-
-for result in response.results:
-    print('Transcript: {}'.format(result.alternatives[0].transcript))'''
